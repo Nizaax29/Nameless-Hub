@@ -1,38 +1,428 @@
-if game.PlaceId == 109983668079237
+-- Services
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+local Workspace = game:GetService("Workspace")
+local PathfindingService = game:GetService("PathfindingService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+-- NMX HUB bouton
+local HubToggle = Instance.new("TextButton")
+HubToggle.Size = UDim2.new(0,50,0,50)
+HubToggle.Position = UDim2.new(0.5,-25,0.5,-25)
+HubToggle.Text = "NMX"
+HubToggle.Font = Enum.Font.Gotham
+HubToggle.TextColor3 = Color3.fromRGB(0,255,255)
+HubToggle.TextScaled = true
+HubToggle.BackgroundColor3 = Color3.fromRGB(0,0,0)
+HubToggle.Parent = PlayerGui
+local corner = Instance.new("UICorner", HubToggle)
+corner.CornerRadius = UDim.new(0,12)
 
-local Window = Rayfield:CreateWindow({
-   Name = "🔥steal a brainrot script🔥",
-   Icon = 0, -- Icon in Topbar. Can use Lucide Icons (string) or Roblox Image (number). 0 to use no icon (default).
-   LoadingTitle = "NMX HUB",
-   LoadingSubtitle = "by ANW",
-   ShowText = "Rayfield", -- for mobile users to unhide rayfield, change if you'd like
-   Theme = "Default", -- Check https://docs.sirius.menu/rayfield/configuration/themes
+-- Déplaçable
+local dragging, dragInput, mousePos, framePos
+HubToggle.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		mousePos = input.Position
+		framePos = HubToggle.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then dragging = false end
+		end)
+	end
+end)
+HubToggle.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		dragInput = input
+	end
+end)
+UserInputService.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		local delta = input.Position - mousePos
+		HubToggle.Position = UDim2.new(framePos.X.Scale, framePos.X.Offset+delta.X,
+		                               framePos.Y.Scale, framePos.Y.Offset+delta.Y)
+	end
+end)
 
-   ToggleUIKeybind = "K", -- The keybind to toggle the UI visibility (string like "K" or Enum.KeyCode)
+-- ScreenGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "NMXHubGUI"
+ScreenGui.Parent = PlayerGui
 
-   DisableRayfieldPrompts = false,
-   DisableBuildWarnings = false, -- Prevents Rayfield from warning when the script has a version mismatch with the interface
+-- Hub Frame
+local HubFrame = Instance.new("Frame")
+HubFrame.Size = UDim2.new(0,400,0,300)
+HubFrame.Position = UDim2.new(0.5,-200,0.5,-150)
+HubFrame.BackgroundColor3 = Color3.fromRGB(15,15,15)
+HubFrame.BackgroundTransparency = 0.2
+HubFrame.BorderSizePixel = 0
+HubFrame.Visible = false
+HubFrame.Parent = ScreenGui
+local hubCorner = Instance.new("UICorner", HubFrame)
+hubCorner.CornerRadius = UDim.new(0,20)
 
-   ConfigurationSaving = {
-      Enabled = true,
-      FolderName = nil, -- Create a custom folder for your hub/game
-      FileName = "NmxAnw"
-   },
-   Discord = {
-      Enabled = true, -- Prompt the user to join your Discord server if their executor supports it
-      Invite = "https://discord.gg/wF392kaUK", -- The Discord invite code, do not include discord.gg/. E.g. discord.gg/ ABCD would be ABCD
-      RememberJoins = true -- Set this to false to make them join the discord every time they load it up
-   },
-   KeySystem = true, -- Set this to true to use our key system
-   KeySettings = {
-      Title = "nmx hub | key",
-      Subtitle = "Link In Discord Server",
-      Note = "Join Server From Misc Tab", -- Use this to tell the user how to get a key
-      FileName = "nmxhubkey", -- It is recommended to use something unique as other scripts using Rayfield may overwrite your key file
-      SaveKey = false, -- The user's key will be saved, but if you change the key, they will be unable to use your script
-      GrabKeyFromSite = true, -- If this is true, set Key below to the RAW site you would like Rayfield to get the key from
-      Key = {"https://pastebin.com/raw/DuSUJu0w"} -- List of keys that will be accepted by the system, can be RAW file links (pastebin, github etc) or simple strings ("hello","key22")
-   }
-})
+-- Onglets
+local TabFrame = Instance.new("Frame")
+TabFrame.Size = UDim2.new(0,80,1,0)
+TabFrame.Position = UDim2.new(0,0,0,0)
+TabFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+TabFrame.BorderSizePixel = 0
+TabFrame.Parent = HubFrame
+
+local MainTabBtn = Instance.new("TextButton")
+MainTabBtn.Size = UDim2.new(1,0,0,40)
+MainTabBtn.Position = UDim2.new(0,0,0,0)
+MainTabBtn.Text = "Main"
+MainTabBtn.TextColor3 = Color3.fromRGB(0,255,255)
+MainTabBtn.Font = Enum.Font.Gotham
+MainTabBtn.TextScaled = true
+MainTabBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
+MainTabBtn.Parent = TabFrame
+
+local DiscordTabBtn = Instance.new("TextButton")
+DiscordTabBtn.Size = UDim2.new(1,0,0,40)
+DiscordTabBtn.Position = UDim2.new(0,0,0,40)
+DiscordTabBtn.Text = "Discord"
+DiscordTabBtn.TextColor3 = Color3.fromRGB(0,255,255)
+DiscordTabBtn.Font = Enum.Font.Gotham
+DiscordTabBtn.TextScaled = true
+DiscordTabBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
+DiscordTabBtn.Parent = TabFrame
+
+-- Button Container
+local ButtonContainer = Instance.new("Frame")
+ButtonContainer.Size = UDim2.new(1,-80,1,0)
+ButtonContainer.Position = UDim2.new(0,80,0,0)
+ButtonContainer.BackgroundTransparency = 1
+ButtonContainer.Parent = HubFrame
+
+-- Fonction de style
+local function styleButton(button)
+	local corner = Instance.new("UICorner", button)
+	corner.CornerRadius = UDim.new(0,12)
+	local stroke = Instance.new("UIStroke", button)
+	stroke.Thickness = 2
+	stroke.Color = Color3.fromRGB(0,255,255)
+end
+
+-- Fonction créer bouton
+local function createButton(name,pos)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0,150,0,40)
+	btn.Position = pos
+	btn.Text = name
+	btn.BackgroundColor3 = Color3.fromRGB(20,20,20)
+	btn.TextColor3 = Color3.fromRGB(0,255,255)
+	btn.Font = Enum.Font.Gotham
+	btn.TextScaled = true
+	btn.Parent = ButtonContainer
+	styleButton(btn)
+	return btn
+end
+
+-- Boutons
+local WalkButton = createButton("Walk to Base", UDim2.new(0.1,0,0.1,0))
+local TweenButton = createButton("Tween to Base: OFF", UDim2.new(0.1,0,0.25,0))
+local ESPButton = createButton("BEST ESP: OFF", UDim2.new(0.1,0,0.4,0))
+local AutoKickButton = createButton("Auto Kick: OFF", UDim2.new(0.1,0,0.55,0))
+
+-- Toggle hub
+HubToggle.MouseButton1Click:Connect(function()
+	HubFrame.Visible = not HubFrame.Visible
+end)
+
+-- Player info
+local character = Player.Character or Player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local hrp = character:WaitForChild("HumanoidRootPart")
+Player.CharacterAdded:Connect(function(c)
+	character = c
+	humanoid = character:WaitForChild("Humanoid")
+	hrp = character:WaitForChild("HumanoidRootPart")
+end)
+
+-- Variables état
+local tweenActive = false
+local espActive = false
+local autoKickActive = false
+
+-- Walk to Base
+local function FindDelivery()
+	local plots = Workspace:FindFirstChild("Plots")
+	if not plots then return nil end
+	for _, plot in pairs(plots:GetChildren()) do
+		local sign = plot:FindFirstChild("PlotSign")
+		if sign and sign:FindFirstChild("YourBase") and sign.YourBase.Enabled then
+			local hitbox = plot:FindFirstChild("DeliveryHitbox")
+			if hitbox then return hitbox end
+		end
+	end
+	return nil
+end
+
+local function WalkTo(target)
+	if not target then return end
+	local path = PathfindingService:CreatePath({
+		AgentRadius = 2,
+		AgentHeight = 5,
+		AgentCanJump = true,
+		AgentJumpHeight = 8,
+		AgentMaxSlope = 45
+	})
+	pcall(function() path:ComputeAsync(hrp.Position, target.Position) end)
+	if path.Status == Enum.PathStatus.Success then
+		for _, wp in ipairs(path:GetWaypoints()) do
+			humanoid:MoveTo(wp.Position)
+			pcall(function() humanoid.MoveToFinished:Wait(2) end)
+		end
+	end
+end
+
+WalkButton.MouseButton1Click:Connect(function()
+	local target = FindDelivery()
+	if target then WalkTo(target) end
+end)
+
+-- Tween to Base
+local Y_OFFSET = 9
+local STOP_DISTANCE = 5
+local currentTween
+
+local function getBasePosition()
+	local plots = Workspace:FindFirstChild("Plots")
+	if not plots then return nil end
+	for _, plot in ipairs(plots:GetChildren()) do
+		local sign = plot:FindFirstChild("PlotSign")
+		local base = plot:FindFirstChild("DeliveryHitbox")
+		if sign and sign:FindFirstChild("YourBase") and sign.YourBase.Enabled and base then
+			return base.Position
+		end
+	end
+	return nil
+end
+
+local function tweenWalkTo(position)
+	if currentTween then currentTween:Cancel() end
+	local targetPos = Vector3.new(position.X, position.Y + Y_OFFSET, position.Z)
+	local distance = (targetPos - hrp.Position).Magnitude
+	local speed = math.max(humanoid.WalkSpeed, 8)
+	local duration = distance / speed
+	local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
+	currentTween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(targetPos)})
+	currentTween:Play()
+	currentTween.Completed:Wait()
+end
+
+local function isAtBase(pos)
+	return (hrp.Position - pos).Magnitude <= STOP_DISTANCE
+end
+
+local tweenThread
+local function startTween()
+	if tweenActive then
+		tweenThread = task.spawn(function()
+			while tweenActive do
+				local basePos = getBasePosition()
+				if not basePos then break end
+				if isAtBase(basePos) then break end
+				tweenWalkTo(basePos)
+				task.wait(0.5)
+			end
+			tweenActive = false
+			TweenButton.Text = "Tween to Base: OFF"
+		end)
+	end
+end
+
+TweenButton.MouseButton1Click:Connect(function()
+	tweenActive = not tweenActive
+	TweenButton.Text = "Tween to Base: "..(tweenActive and "ON" or "OFF")
+	if tweenActive then startTween() end
+end)
+
+-- BEST ESP
+local ESP_FOLDER
+local LINE_FOLDER
+local currentESP, currentBeam, currentPetInfo
+local a0, a1
+
+local function parseMoneyPerSec(text)
+	text = text:match("^%s*(.-)%s*$")
+	local number,suffix = text:match("%$([%d%.]+)%s*([kKmMbB]?)%s*/?s?")
+	number = tonumber(number) or 0
+	if suffix then
+		suffix = suffix:lower()
+		if suffix=="k" then number=number*1000
+		elseif suffix=="m" then number=number*1e6
+		elseif suffix=="b" then number=number*1e9 end
+	end
+	return number
+end
+
+local function createESP(petName, infoText, mutationText, targetPart)
+	if currentESP then currentESP:Destroy() end
+	ESP_FOLDER = ESP_FOLDER or Instance.new("Folder", PlayerGui)
+	ESP_FOLDER.Name = "ESP"
+	local billboard = Instance.new("BillboardGui")
+	billboard.Size = UDim2.new(0,150,0,50)
+	billboard.AlwaysOnTop = true
+	billboard.Adornee = targetPart
+	billboard.Parent = ESP_FOLDER
+	billboard.StudsOffset = Vector3.new(0,3,0)
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1,0,1,0)
+	label.BackgroundTransparency = 1
+	label.TextStrokeTransparency = 0
+	label.TextStrokeColor3 = Color3.fromRGB(0,0,0)
+	label.TextColor3 = Color3.fromRGB(255,255,255)
+	label.TextScaled = false
+	label.TextSize = 10
+	label.RichText = true
+	label.Text = string.format('<font color="rgb(255,0,0)">%s</font>\n<font color="rgb(0,255,0)">%s</font>\n<font color="rgb(255,255,0)">%s</font>', petName, infoText, mutationText or "")
+	label.Parent = billboard
+	currentESP = billboard
+end
+
+local function createBeam(targetPart)
+	if not character or not character:FindFirstChild("HumanoidRootPart") or not targetPart then return end
+	LINE_FOLDER = LINE_FOLDER or Instance.new("Folder", Workspace)
+	LINE_FOLDER.Name = "ESP_Lines"
+	if currentBeam then currentBeam:Destroy() if a0 then a0:Destroy() end if a1 then a1:Destroy() end end
+	a0 = Instance.new("Attachment", character.HumanoidRootPart)
+	a1 = Instance.new("Attachment", targetPart)
+	local beam = Instance.new("Beam")
+	beam.Attachment0 = a0
+	beam.Attachment1 = a1
+	beam.Width0 = 0.35
+	beam.Width1 = 0.35
+	beam.FaceCamera = true
+	beam.LightInfluence = 0
+	beam.Parent = LINE_FOLDER
+	currentBeam = beam
+	task.spawn(function()
+		while beam.Parent do
+			beam.Color = ColorSequence.new(Color3.fromHSV((tick()%5)/5,1,1))
+			task.wait(0.05)
+		end
+	end)
+end
+
+local function findBestPet()
+	local PlotsFolder = Workspace:FindFirstChild("Plots")
+	if not PlotsFolder then return end
+	local bestValue = -1
+	local bestPet
+	for _, plot in ipairs(PlotsFolder:GetChildren()) do
+		local podiums = plot:FindFirstChild("AnimalPodiums")
+		if podiums then
+			for _, podium in ipairs(podiums:GetChildren()) do
+				local spawnPart = podium:FindFirstChild("Base") and podium.Base:FindFirstChild("Spawn")
+				if spawnPart then
+					local attachment = spawnPart:FindFirstChild("Attachment")
+					local overhead = attachment and attachment:FindFirstChild("AnimalOverhead")
+					if overhead then
+						local nameLabel = overhead:FindFirstChild("DisplayName")
+						local genLabel = overhead:FindFirstChild("Generation")
+						local mutationLabel = overhead:FindFirstChild("Mutation")
+						if genLabel then
+							local petName = nameLabel and nameLabel.Text or "Unknown"
+							local genText = genLabel.Text
+							local mutationText = mutationLabel and mutationLabel.Text or ""
+							local mps = parseMoneyPerSec(genText)
+							local genNumber = tonumber(genText:match("%d+")) or 0
+							local value = mps>0 and mps or genNumber
+							if value>bestValue then
+								bestValue=value
+								bestPet={name=petName,info=genText,mutation=mutationText,part=spawnPart,value=value}
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+	return bestPet
+end
+
+ESPButton.MouseButton1Click:Connect(function()
+	espActive = not espActive
+	ESPButton.Text = "BEST ESP: "..(espActive and "ON" or "OFF")
+end)
+
+task.spawn(function()
+	while true do
+		task.wait(0.3)
+		if espActive then
+			local pet = findBestPet()
+			if pet then
+				local needUpdate=false
+				if not currentESP then needUpdate=true
+				elseif currentPetInfo then
+					if pet.value>currentPetInfo.value or pet.mutation~=currentPetInfo.mutation then
+						needUpdate=true
+					end
+				end
+				if needUpdate then
+					currentPetInfo=pet
+					createESP(pet.name, pet.info, pet.mutation, pet.part)
+					createBeam(pet.part)
+				end
+			else
+				if currentESP then currentESP:Destroy() currentESP=nil currentPetInfo=nil end
+				if currentBeam then currentBeam:Destroy() currentBeam=nil end
+			end
+		end
+	end
+end)
+
+-- Auto Kick
+local keyword = "you stole"
+local kickMessage = "You stole brainrot!"
+
+local function hasKeyword(text)
+	if typeof(text)~="string" then return false end
+	return string.find(string.lower(text), keyword)~=nil
+end
+
+local function kickPlayer()
+	pcall(function() Player:Kick(kickMessage) end)
+end
+
+local function scanGuiObjects(parent)
+	for _, obj in ipairs(parent:GetDescendants()) do
+		if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+			if hasKeyword(obj.Text) then kickPlayer() end
+			obj:GetPropertyChangedSignal("Text"):Connect(function()
+				if hasKeyword(obj.Text) then kickPlayer() end
+			end)
+		end
+	end
+end
+
+local function setupGuiWatcher(gui)
+	gui.DescendantAdded:Connect(function(desc)
+		if desc:IsA("TextLabel") or desc:IsA("TextButton") or desc:IsA("TextBox") then
+			if hasKeyword(desc.Text) then kickPlayer() end
+			desc:GetPropertyChangedSignal("Text"):Connect(function()
+				if hasKeyword(desc.Text) then kickPlayer() end
+			end)
+		end
+	end)
+end
+
+AutoKickButton.MouseButton1Click:Connect(function()
+	autoKickActive = not autoKickActive
+	AutoKickButton.Text = "Auto Kick: "..(autoKickActive and "ON" or "OFF")
+end)
+
+task.spawn(function()
+	while true do
+		task.wait(0.5)
+		if autoKickActive then
+			for _, gui in ipairs(PlayerGui:GetChildren()) do
+				scanGuiObjects(gui)
+			end
+		end
+	end
+end)
