@@ -1,7 +1,7 @@
 --// SERVICES
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local PathfindingService = game:GetService("PathfindingService")
+local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 
@@ -14,10 +14,10 @@ screen.Parent = player:WaitForChild("PlayerGui")
 -- Bouton NMX HUB (Ouvre/Ferme)
 ----------------------------------
 local openBtn = Instance.new("TextButton", screen)
-openBtn.Size = UDim2.new(0, 55, 0, 55)
-openBtn.Position = UDim2.new(0.03, 0, 0.3, 0)
+openBtn.Size = UDim2.new(0, 60, 0, 60)
+openBtn.Position = UDim2.new(0.5, -30, 0.05, 0)
 openBtn.Text = "NMX\nHUB"
-openBtn.TextSize = 14
+openBtn.TextSize = 16
 openBtn.Font = Enum.Font.GothamBold
 openBtn.TextColor3 = Color3.fromRGB(0, 255, 255)
 openBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
@@ -32,21 +32,21 @@ glow.Color = Color3.fromRGB(0, 255, 255)
 glow.Thickness = 2
 
 local corner = Instance.new("UICorner", openBtn)
-corner.CornerRadius = UDim.new(0, 10)
+corner.CornerRadius = UDim.new(0, 8)
 
 ----------------------------------
 -- HUB FRAME
 ----------------------------------
 local hub = Instance.new("Frame", screen)
-hub.Size = UDim2.new(0, 450, 0, 330)
-hub.Position = UDim2.new(0.5, -225, 0.5, -165)
+hub.Size = UDim2.new(0, 500, 0, 350)
+hub.Position = UDim2.new(0.5, -250, 0.5, -175)
 hub.BackgroundColor3 = Color3.fromRGB(18,18,18)
 hub.BorderSizePixel = 0
 hub.Visible = false
 hub.BackgroundTransparency = 0.2
 
 local hubCorner = Instance.new("UICorner", hub)
-hubCorner.CornerRadius = UDim.new(0, 10)
+hubCorner.CornerRadius = UDim.new(0, 12)
 
 local hubStroke = Instance.new("UIStroke", hub)
 hubStroke.Color = Color3.fromRGB(0, 255, 255)
@@ -56,42 +56,47 @@ hubStroke.Thickness = 2
 -- Tabs
 ----------------------------------
 local tabHolder = Instance.new("Frame", hub)
-tabHolder.Size = UDim2.new(0, 110, 1, 0)
+tabHolder.Size = UDim2.new(0, 110, 1, -20)
+tabHolder.Position = UDim2.new(0,5,0,10)
 tabHolder.BackgroundTransparency = 1
-
-local tabs = Instance.new("Folder")
+local tabsFolder = Instance.new("Folder", tabHolder)
 
 local function makeTab(name)
     local b = Instance.new("TextButton", tabHolder)
     b.Size = UDim2.new(1, -10, 0, 45)
-    b.Position = UDim2.new(0, 5, 0, (#tabs:GetChildren()) * 50 + 10)
+    b.Position = UDim2.new(0, 5, 0, (#tabsFolder:GetChildren())*50)
     b.Text = name
     b.Font = Enum.Font.GothamBold
     b.TextSize = 14
-    b.TextColor3 = Color3.fromRGB(0, 255, 255)
+    b.TextColor3 = Color3.fromRGB(0,255,255)
     b.BackgroundColor3 = Color3.fromRGB(25,25,25)
     b.AutoButtonColor = false
     Instance.new("UICorner",b).CornerRadius = UDim.new(0,6)
     Instance.new("UIStroke",b).Color = Color3.fromRGB(0,255,255)
-    b.Parent = tabs
     return b
 end
 
 local mainTabBtn = makeTab("MAIN")
 local discordTabBtn = makeTab("DISCORD")
 
-tabs.Parent = tabHolder
-
 ----------------------------------
 -- Contenus
 ----------------------------------
-local mainPage = Instance.new("Frame", hub)
-mainPage.Size = UDim2.new(1, -120, 1, -20)
+local mainPage = Instance.new("ScrollingFrame", hub)
+mainPage.Size = UDim2.new(1, -130, 1, -20)
 mainPage.Position = UDim2.new(0, 115, 0, 10)
 mainPage.BackgroundTransparency = 1
+mainPage.CanvasSize = UDim2.new(0,0,0,0)
+mainPage.ScrollBarThickness = 6
 
-local discordPage = mainPage:Clone()
-discordPage.Parent = hub
+local layout = Instance.new("UIListLayout", mainPage)
+layout.Padding = UDim.new(0,8)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local discordPage = Instance.new("Frame", hub)
+discordPage.Size = mainPage.Size
+discordPage.Position = mainPage.Position
+discordPage.BackgroundTransparency = 1
 discordPage.Visible = false
 
 ----------------------------------
@@ -108,7 +113,7 @@ discordTabBtn.MouseButton1Click:Connect(function()
 end)
 
 ----------------------------------
--- Boutons utilitaires
+-- Utility Buttons
 ----------------------------------
 local function makeBtn(text)
     local b = Instance.new("TextButton", mainPage)
@@ -123,55 +128,16 @@ local function makeBtn(text)
     return b
 end
 
-local layout = Instance.new("UIListLayout", mainPage)
-layout.Padding = UDim.new(0, 8)
-
--- BOUTONS
+-- Walk To Base
 local walkBtn = makeBtn("Walk To Base")
-local kickBtn = makeBtn("Auto Kick : OFF")
-local espBtn  = makeBtn("ESP : OFF")
-
-----------------------------------
--- DISCORD PAGE
-----------------------------------
-local copyBtn = Instance.new("TextButton", discordPage)
-copyBtn.Size = UDim2.new(1, -10, 0, 45)
-copyBtn.Position = UDim2.new(0,5,0,5)
-copyBtn.Text = "Copy The Link"
-copyBtn.BackgroundColor3 = Color3.fromRGB(25,25,25)
-copyBtn.TextColor3 = Color3.fromRGB(0,255,255)
-copyBtn.Font = Enum.Font.GothamBold
-copyBtn.TextSize = 13
-Instance.new("UICorner",copyBtn)
-Instance.new("UIStroke",copyBtn).Color = Color3.fromRGB(0,255,255)
-
-copyBtn.MouseButton1Click:Connect(function()
-    setclipboard("https://discord.gg/r7CCPpUTth")
-    copyBtn.Text = "Copied !"
-    task.wait(1)
-    copyBtn.Text = "Copy The Link"
-end)
-
-----------------------------------
--- OUVRIR / FERMER HUB
-----------------------------------
-openBtn.MouseButton1Click:Connect(function()
-    hub.Visible = not hub.Visible
-end)
-
-----------------------------------
--- WALK TO BASE
-----------------------------------
 walkBtn.MouseButton1Click:Connect(function()
     local char = player.Character
     if not char then return end
     local hrp = char:FindFirstChild("HumanoidRootPart")
     local huma = char:FindFirstChild("Humanoid")
     if not hrp or not huma then return end
-
     local plots = workspace:FindFirstChild("Plots")
     if not plots then return end
-
     for _, plot in pairs(plots:GetChildren()) do
         local sign = plot:FindFirstChild("PlotSign")
         if sign and sign:FindFirstChild("YourBase") and sign.YourBase.Enabled then
@@ -183,15 +149,13 @@ walkBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-----------------------------------
--- AUTO KICK (You stole)
-----------------------------------
+-- Auto Kick
 local autoKick = false
+local kickBtn = makeBtn("Auto Kick : OFF")
 kickBtn.MouseButton1Click:Connect(function()
     autoKick = not autoKick
     kickBtn.Text = autoKick and "Auto Kick : ON" or "Auto Kick : OFF"
 end)
-
 task.spawn(function()
     while task.wait(1) do
         if autoKick then
@@ -206,33 +170,27 @@ task.spawn(function()
     end
 end)
 
-----------------------------------
--- ESP SYSTEM (HIGHLIGHT)
-----------------------------------
+-- ESP
 local espOn = false
 local highlights = {}
-
+local espBtn = makeBtn("ESP : OFF")
 local function addESP(p)
     if p == player then return end
     if not p.Character then return end
     if highlights[p] then return end
-
     local hl = Instance.new("Highlight")
     hl.FillColor = Color3.fromRGB(0,255,255)
     hl.OutlineColor = Color3.fromRGB(0,200,255)
     hl.FillTransparency = 0.5
     hl.Parent = p.Character
-
     highlights[p] = hl
 end
-
 local function removeESP(p)
     if highlights[p] then
         highlights[p]:Destroy()
         highlights[p] = nil
     end
 end
-
 local function enableESP()
     for _,p in pairs(Players:GetPlayers()) do
         addESP(p)
@@ -242,20 +200,75 @@ local function enableESP()
         end)
     end
 end
-
 local function disableESP()
     for p,h in pairs(highlights) do
         if h then h:Destroy() end
     end
     table.clear(highlights)
 end
-
 espBtn.MouseButton1Click:Connect(function()
     espOn = not espOn
     espBtn.Text = espOn and "ESP : ON" or "ESP : OFF"
     if espOn then enableESP() else disableESP() end
 end)
-
 Players.PlayerRemoving:Connect(removeESP)
 
-print("✅ NMX HUB Loaded Successfully!")
+-- Anti Die
+local antiDieBtn = makeBtn("Anti Die : OFF")
+local antiDieEnabled = false
+antiDieBtn.MouseButton1Click:Connect(function()
+    antiDieEnabled = not antiDieEnabled
+    antiDieBtn.Text = antiDieEnabled and "Anti Die : ON" or "Anti Die : OFF"
+end)
+local function protectChar(char)
+    local humanoid = char:WaitForChild("Humanoid",5)
+    if not humanoid then return end
+    if not char:FindFirstChildOfClass("ForceField") then
+        local ff = Instance.new("ForceField")
+        ff.Parent = char
+    end
+    humanoid.HealthChanged:Connect(function(h)
+        if antiDieEnabled and humanoid and humanoid.Health < 1 then
+            humanoid.Health = humanoid.MaxHealth
+        end
+    end)
+end
+player.CharacterAdded:Connect(protectChar)
+if player.Character then protectChar(player.Character) end
+
+----------------------------------
+-- DISCORD PAGE
+----------------------------------
+local copyBtn = Instance.new("TextButton", discordPage)
+copyBtn.Size = UDim2.new(1, -10, 0, 45)
+copyBtn.Position = UDim2.new(0,5,0,5)
+copyBtn.Text = "Copy The Link"
+copyBtn.BackgroundColor3 = Color3.fromRGB(25,25,25)
+copyBtn.TextColor3 = Color3.fromRGB(0,255,255)
+copyBtn.Font = Enum.Font.GothamBold
+copyBtn.TextSize = 13
+Instance.new("UICorner",copyBtn)
+Instance.new("UIStroke",copyBtn).Color = Color3.fromRGB(0,255,255)
+copyBtn.MouseButton1Click:Connect(function()
+    setclipboard("https://discord.gg/r7CCPpUTth")
+    copyBtn.Text = "Copied !"
+    task.wait(1)
+    copyBtn.Text = "Copy The Link"
+end)
+
+----------------------------------
+-- HUB OPEN/CLOSE ANIMATION
+----------------------------------
+openBtn.MouseButton1Click:Connect(function()
+    local isVisible = hub.Visible
+    hub.Visible = true
+    local goal = {Size = isVisible and UDim2.new(0,0,0,0) or UDim2.new(0,500,0,350)}
+    TweenService:Create(hub, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), goal):Play()
+    if isVisible then
+        task.delay(0.3,function()
+            hub.Visible = false
+        end)
+    end
+end)
+
+print("✅ NMX HUB Final Loaded Successfully!")
